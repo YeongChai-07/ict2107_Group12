@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.awt.event.ActionEvent;
 import javax.swing.JScrollPane;
 import javax.swing.JList;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 public class Group12ChatApp extends JFrame {
 	// Using
@@ -29,7 +31,7 @@ public class Group12ChatApp extends JFrame {
 
 	InetAddress commonMulticastGroup = null;
 	MulticastSocket commonMulticastSocket = null;
-	
+
 	private JTextField txtUserName;
 	private JButton btnRegisterUser;
 
@@ -46,25 +48,25 @@ public class Group12ChatApp extends JFrame {
 	JTextField friendField = new JTextField(10);
 	JTextArea taChatBox;
 	JTextField txtMessage;
-	
+
 	MulticastSocket groupMulticastSocket = null;
 	InetAddress groupMulticastGroup = null;
-	
+
 	JLabel lblGroup;
 	JLabel lblChatGroupName;
 	JLabel lblStatus;
 	JLabel lblTempID;
-	
+
 	JButton btnChatJoin;
 	JButton btnChatLeave;
 	JButton btnMessageSend;
-	
-	//JScrollPane (A container with scrollbars that places a UI component within it)
-	//for our JTextArea and JList
+
+	// JScrollPane (A container with scrollbars that places a UI component
+	// within it)
+	// for our JTextArea and JList
 	JScrollPane textArea_ScrollPane;
 	JScrollPane groupList_ScrollPane;
 	JScrollPane friendList_ScrollPane;
-	
 
 	/**
 	 * Launch the application.
@@ -90,8 +92,27 @@ public class Group12ChatApp extends JFrame {
 		groupMap = new HashMap<String, String>();
 
 		setTitle("Group 12 Group Chat Application");
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 		setBounds(100, 100, 551, 417);
+		addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent e) {				
+				try {
+					// Notify all user have offline
+					String message = "UserStatus:All:" + txtUserName.getText().trim() + ":Offline";
+					byte[] buf = message.getBytes();
+					DatagramPacket dgpUserStatus = new DatagramPacket(buf, buf.length, commonMulticastGroup,
+							MulticastGroupPort);
+					commonMulticastSocket.send(dgpUserStatus);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+
+				if (JOptionPane.showConfirmDialog(new JFrame(), "Are you sure to leave the application?", "", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION){
+					System.exit(0);
+			    }
+			}
+		});
 		setVisible(true);
 
 		JPanel contentPane = new JPanel();
@@ -101,29 +122,32 @@ public class Group12ChatApp extends JFrame {
 
 		lblTempID = new JLabel("ID");
 		lblTempID.setText(ManagementFactory.getRuntimeMXBean().getName());
+		lblTempID.setVisible(false);
 		lblTempID.setBounds(362, 22, 109, 14);
 		contentPane.add(lblTempID);
 
-		lblStatus = new JLabel("Status");
+		lblStatus = new JLabel("Offline");
 		lblStatus.setBounds(467, 22, 46, 14);
 		contentPane.add(lblStatus);
 
 		taChatBox = new JTextArea();
 		taChatBox.setBounds(0, 0, 285, 185);
-		
-		//Let's create a JScrollPane container and place the JTextArea over it
+
+		// Let's create a JScrollPane container and place the JTextArea over it
 		textArea_ScrollPane = new JScrollPane(taChatBox);
-		
-		//Setting the textArea scrollpane's x,y coordinates, width and height
+
+		// Setting the textArea scrollpane's x,y coordinates, width and height
 		textArea_ScrollPane.setBounds(228, 149, 285, 185);
-		
-		//Enabling both horizontal and vertical scrolling
+
+		// Enabling both horizontal and vertical scrolling
 		textArea_ScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
 		textArea_ScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-		
-		/*Instead of adding JTextArea directly to contentPane, we add the JScrollPane
-		//which already had the JTextArea attached to it to the contentPane
-		//contentPane.add(taChatBox);*/
+
+		/*
+		 * Instead of adding JTextArea directly to contentPane, we add the
+		 * JScrollPane //which already had the JTextArea attached to it to the
+		 * contentPane //contentPane.add(taChatBox);
+		 */
 		contentPane.add(textArea_ScrollPane);
 
 		// *********************************************************************
@@ -133,7 +157,6 @@ public class Group12ChatApp extends JFrame {
 			commonMulticastGroup = InetAddress.getByName(commonMulticastGroupIP);
 			commonMulticastSocket.joinGroup(commonMulticastGroup);
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		// Always listen to the default channel
@@ -185,7 +208,8 @@ public class Group12ChatApp extends JFrame {
 								commonMulticastSocket.send(dgpUserStatus);
 
 								userStatus = "Offline";
-								btnRegisterUser.setText("Register");
+								txtUserName.setEnabled(true);
+								btnRegisterUser.setText("Online");
 								JOptionPane.showMessageDialog(new JFrame(), data, "Error", JOptionPane.ERROR_MESSAGE);
 							}
 						}
@@ -194,7 +218,7 @@ public class Group12ChatApp extends JFrame {
 						// sender user name ; extra = null
 						else if (command.equals("FriendRequest")) {
 							// Only if message is for you
-							if (user.equals(txtUserName.getText().trim())) {
+							if (user.equals(txtUserName.getText().trim()) && userStatus.equals("Online")) {
 								// Yes/ No dialog to accept request or not
 								String requester = data;
 								String dialogMessage = "\"" + requester
@@ -232,7 +256,7 @@ public class Group12ChatApp extends JFrame {
 						// = sender user name ; extra = Yes/No
 						else if (command.equals("FriendRequestReply")) {
 							// Only if message is for you
-							if (user.equals(txtUserName.getText().trim())) {
+							if (user.equals(txtUserName.getText().trim()) && userStatus.equals("Online")) {
 								if (extra.equals("Yes")) {
 									// Add friend into Friend list
 									// Add into friend history for detect
@@ -298,7 +322,6 @@ public class Group12ChatApp extends JFrame {
 								try {
 									Thread.sleep(1000);
 								} catch (InterruptedException e) {
-									// TODO Auto-generated catch block
 									e.printStackTrace();
 								}
 								Window w = SwingUtilities.getWindowAncestor(friendField);
@@ -317,7 +340,7 @@ public class Group12ChatApp extends JFrame {
 						else if (command.equals("GroupInvite")) {
 							// splited string to check if message to for you
 							String[] friends = user.split(",");
-							if (Arrays.asList(friends).contains(txtUserName.getText().trim())) {
+							if (Arrays.asList(friends).contains(txtUserName.getText().trim()) && userStatus.equals("Online")) {
 								String dialogMessage = "You have been invited to join \"" + data
 										+ "\", will you accept the request?";
 								int requestResult = JOptionPane.showConfirmDialog(null, dialogMessage,
@@ -334,74 +357,78 @@ public class Group12ChatApp extends JFrame {
 						// command = Unicast Invite; user = target user name
 						// comma; data = sender user name ; extra = unicast ip
 						else if (command.equals("UnicastInvite")) {
-							//Check IP duplicated?
+							// Check IP duplicated?
 							// Check everyone groupMap IP but not requester
 							if (groupMap.containsValue(extra) && !txtUserName.getText().equals(data)) {
 								String message = "UnicastInviteReply:" + data
-										+ ":Assigned IP had already been taken.Please try again.:IP";	
+										+ ":Assigned IP had already been taken.Please try again.:IP";
 								byte[] buf = message.getBytes();
 								DatagramPacket dgpUnicastInviteReply = new DatagramPacket(buf, buf.length,
 										commonMulticastGroup, MulticastGroupPort);
 								commonMulticastSocket.send(dgpUnicastInviteReply);
-							}else{
-								// If its receiver 
-								if(txtUserName.getText().equals(user)){
+							} else {
+								// If its receiver
+								if (txtUserName.getText().equals(user)) {
 									String message = "";
 									String dialogMessage = "\"" + data
 											+ "\" wants to private message you, will you accept the request?";
-									int requestResult = JOptionPane.showConfirmDialog(null, dialogMessage, "Friend Request",
-											JOptionPane.YES_NO_OPTION);
+									int requestResult = JOptionPane.showConfirmDialog(null, dialogMessage,
+											"Friend Request", JOptionPane.YES_NO_OPTION);
 									// Accept unicast
-									if (requestResult == JOptionPane.YES_OPTION){
-										message = "UnicastInviteReply:" + data
-												+ ":\""+user+"\" had accepted the private messaging.:Accept";
-										
-										//Add IP to group map (sender name, IP)
+									if (requestResult == JOptionPane.YES_OPTION) {
+										message = "UnicastInviteReply:" + data + ":\"" + user
+												+ "\" had accepted the private messaging.:Accept";
+
+										// Add IP to group map (sender name, IP)
 										groupMap.put(data, extra);
-										// Join group				
+										// Join group
 										lblGroup.setText("User:");
 										lblChatGroupName.setText(data);
-										
+
 										groupMulticastSocket = new MulticastSocket(MulticastGroupPort);
 										groupMulticastGroup = InetAddress.getByName(extra);
 										groupMulticastSocket.joinGroup(groupMulticastGroup);
 										taChatBox.setText("");
-										
-										//Send a joined message
+
+										// Send a joined message
 										String joinmessage = txtUserName.getText() + " joined";
 										byte[] buf = joinmessage.getBytes();
-										DatagramPacket dgpChatJoin = new DatagramPacket(buf, buf.length, groupMulticastGroup, MulticastGroupPort);
-										groupMulticastSocket.send(dgpChatJoin);										
-										//Create a new thread to keep listening for packets from the group
+										DatagramPacket dgpChatJoin = new DatagramPacket(buf, buf.length,
+												groupMulticastGroup, MulticastGroupPort);
+										groupMulticastSocket.send(dgpChatJoin);
+										// Create a new thread to keep listening
+										// for packets from the group
 										new Thread(new Runnable() {
 											@Override
 											public void run() {
 												byte buf1[] = new byte[1000];
-												DatagramPacket dgpMessageReceived= new DatagramPacket(buf1, buf1.length);
-												while(true){
-													try{
+												DatagramPacket dgpMessageReceived = new DatagramPacket(buf1,
+														buf1.length);
+												while (true) {
+													try {
 														groupMulticastSocket.receive(dgpMessageReceived);
 														byte[] receivedData = dgpMessageReceived.getData();
 														int length = dgpMessageReceived.getLength();
-														//Assured we received string
-														String msg = new String(receivedData,0, length);
+														// Assured we received
+														// string
+														String msg = new String(receivedData, 0, length);
 														taChatBox.append(msg + "\n");
-													}catch(IOException ex){
+													} catch (IOException ex) {
 														ex.printStackTrace();
 													}
 												}
 											}
 										}).start();
-										
-										//Toggle button
+
+										// Toggle button
 										btnChatJoin.setEnabled(false);
 										btnChatLeave.setEnabled(true);
 										btnMessageSend.setEnabled(true);
 									}
-									//Rejected unicast
-									else{
-										message = "UnicastInviteReply:" + data
-												+ ":\""+user+"\" had rejected the private messaging.:Rejected";								
+									// Rejected unicast
+									else {
+										message = "UnicastInviteReply:" + data + ":\"" + user
+												+ "\" had rejected the private messaging.:Rejected";
 									}
 									byte[] buf = message.getBytes();
 									DatagramPacket dgpUnicastInviteReply = new DatagramPacket(buf, buf.length,
@@ -409,67 +436,76 @@ public class Group12ChatApp extends JFrame {
 									commonMulticastSocket.send(dgpUnicastInviteReply);
 								}
 							}
-							
+
 						}
 						// Unicast Invite Reply
-						// command = Unicast Invite Reply; user = requester user name
-						// comma; data = invalid message ; extra = IP/Accept/Reject
+						// command = Unicast Invite Reply; user = requester user
+						// name
+						// comma; data = invalid message ; extra =
+						// IP/Accept/Reject
 						else if (command.equals("UnicastInviteReply")) {
 							// Only if is requester
-							if(txtUserName.getText().equals(user)){
-								if(extra.equals("IP")){
-									JOptionPane.showMessageDialog(new JFrame(), data, "Alert", JOptionPane.INFORMATION_MESSAGE);									
-									//Clear chat group name
+							if (txtUserName.getText().equals(user)) {
+								if (extra.equals("IP")) {
+									JOptionPane.showMessageDialog(new JFrame(), data, "Alert",
+											JOptionPane.INFORMATION_MESSAGE);
+									// Clear chat group name
 									lblGroup.setText("");
 									lblChatGroupName.setText("");
-								}else if(extra.equals("Reject")){
-									JOptionPane.showMessageDialog(new JFrame(), data, "Alert", JOptionPane.INFORMATION_MESSAGE);
-									//Clear chat group name
+								} else if (extra.equals("Reject")) {
+									JOptionPane.showMessageDialog(new JFrame(), data, "Alert",
+											JOptionPane.INFORMATION_MESSAGE);
+									// Clear chat group name
 									lblGroup.setText("");
 									lblChatGroupName.setText("");
-								}else if(extra.equals("Accept")){
-									JOptionPane.showMessageDialog(new JFrame(), data, "Alert", JOptionPane.INFORMATION_MESSAGE);									
-									// Join group													
+								} else if (extra.equals("Accept")) {
+									JOptionPane.showMessageDialog(new JFrame(), data, "Alert",
+											JOptionPane.INFORMATION_MESSAGE);
+									// Join group
 									groupMulticastSocket = new MulticastSocket(MulticastGroupPort);
-									groupMulticastGroup = InetAddress.getByName(groupMap.get(lblChatGroupName.getText()));
+									groupMulticastGroup = InetAddress
+											.getByName(groupMap.get(lblChatGroupName.getText()));
 									groupMulticastSocket.joinGroup(groupMulticastGroup);
 									taChatBox.setText("");
-									
-									//Send a joined message
+
+									// Send a joined message
 									String joinmessage = txtUserName.getText() + " joined";
 									byte[] buf = joinmessage.getBytes();
-									DatagramPacket dgpChatJoin = new DatagramPacket(buf, buf.length, groupMulticastGroup, MulticastGroupPort);
-									groupMulticastSocket.send(dgpChatJoin);										
-									//Create a new thread to keep listening for packets from the group
+									DatagramPacket dgpChatJoin = new DatagramPacket(buf, buf.length,
+											groupMulticastGroup, MulticastGroupPort);
+									groupMulticastSocket.send(dgpChatJoin);
+									// Create a new thread to keep listening for
+									// packets from the group
 									new Thread(new Runnable() {
 										@Override
 										public void run() {
 											byte buf1[] = new byte[1000];
-											DatagramPacket dgpMessageReceived= new DatagramPacket(buf1, buf1.length);
-											while(true){
-												try{
+											DatagramPacket dgpMessageReceived = new DatagramPacket(buf1, buf1.length);
+											while (true) {
+												try {
 													groupMulticastSocket.receive(dgpMessageReceived);
 													byte[] receivedData = dgpMessageReceived.getData();
 													int length = dgpMessageReceived.getLength();
-													//Assured we received string
-													String msg = new String(receivedData,0, length);
+													// Assured we received
+													// string
+													String msg = new String(receivedData, 0, length);
 													taChatBox.append(msg + "\n");
-												}catch(IOException ex){
+												} catch (IOException ex) {
 													ex.printStackTrace();
 												}
 											}
 										}
 									}).start();
-									
-									//Toggle button
+
+									// Toggle button
 									btnChatJoin.setEnabled(false);
 									btnChatLeave.setEnabled(true);
 									btnMessageSend.setEnabled(true);
-									
+
 								}
 							}
 						}
-						
+
 					} catch (IOException ex) {
 						ex.printStackTrace();
 					}
@@ -489,12 +525,12 @@ public class Group12ChatApp extends JFrame {
 		contentPane.add(txtUserName);
 		txtUserName.setColumns(10);
 
-		btnRegisterUser = new JButton("Register");
+		btnRegisterUser = new JButton("Online");
 		btnRegisterUser.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				try {
 					// Toggle status and button display
-					if (btnRegisterUser.getText().equals("Register")) {
+					if (btnRegisterUser.getText().equals("Online")) {
 						// Notify all user have online
 						String message = "UserStatus:All:" + txtUserName.getText().trim() + ":Online";
 						byte[] buf = message.getBytes();
@@ -503,6 +539,7 @@ public class Group12ChatApp extends JFrame {
 						commonMulticastSocket.send(dgpUserStatus);
 
 						userStatus = "Online";
+						txtUserName.setEnabled(false);
 						btnRegisterUser.setText("Offline");
 					} else {
 						// Notify all user have offline
@@ -513,7 +550,8 @@ public class Group12ChatApp extends JFrame {
 						commonMulticastSocket.send(dgpUserStatus);
 
 						userStatus = "Offline";
-						btnRegisterUser.setText("Register");
+						txtUserName.setEnabled(true);
+						btnRegisterUser.setText("Online");
 					}
 
 					// Broadcast Username check
@@ -528,7 +566,6 @@ public class Group12ChatApp extends JFrame {
 					lblStatus.setText(userStatus); // Own reference
 
 				} catch (Exception e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}
@@ -559,7 +596,6 @@ public class Group12ChatApp extends JFrame {
 							MulticastGroupPort);
 					commonMulticastSocket.send(dgpFriendRequest);
 				} catch (Exception e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}
@@ -572,12 +608,15 @@ public class Group12ChatApp extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				// Remove from friend History
 				if (friendHistoryList.contains(friendList.getSelectedValue())) {
-					friendHistoryList.remove(friendList.getSelectedValue());
+					if (JOptionPane.showConfirmDialog(new JFrame(), "Are you sure to remove \""+friendList.getSelectedValue()+"\" from friend list?", "Friend Delete", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION){
+						friendHistoryList.remove(friendList.getSelectedValue());
+						// remove from JList
+						friendVector.remove(friendList.getSelectedValue());
+						friendList.setListData(friendVector);
+				    }					
 				}
 
-				// remove from JList
-				friendVector.remove(friendList.getSelectedValue());
-				friendList.setListData(friendVector);
+				
 			}
 		});
 		btnFriendDelete.setBounds(362, 49, 89, 23);
@@ -593,44 +632,46 @@ public class Group12ChatApp extends JFrame {
 		friendList = new JList<String>(friendVector);
 		friendList.setBounds(0, 0, 90, 185);
 		friendList.addMouseListener(new MouseAdapter() {
-		    public void mouseClicked(MouseEvent evt) {
-		        JList list = (JList)evt.getSource();
-		        if (evt.getClickCount() == 2) {		            
+			public void mouseClicked(MouseEvent evt) {
+				JList list = (JList) evt.getSource();
+				if (evt.getClickCount() == 2) {
 					try {
 						// Double-click detected
-			            int index = list.locationToIndex(evt.getPoint());
-			            // change groupchat title			            
-			            lblGroup.setText("User:");
-			            lblChatGroupName.setText(friendVector.get(index));
-			            
-			            // Attempt Unicast
-			            String requestIP = randomGenerateIP();
-			            groupMap.put(friendVector.get(index).toString(), requestIP);
-						String message = "UnicastInvite:" + friendVector.get(index) + ":"
-								+ txtUserName.getText().trim() + ":" + requestIP;
+						int index = list.locationToIndex(evt.getPoint());
+						// change groupchat title
+						lblGroup.setText("User:");
+						lblChatGroupName.setText(friendVector.get(index));
+
+						// Attempt Unicast
+						String requestIP = randomGenerateIP();
+						groupMap.put(friendVector.get(index).toString(), requestIP);
+						String message = "UnicastInvite:" + friendVector.get(index) + ":" + txtUserName.getText().trim()
+								+ ":" + requestIP;
 						byte[] buf = message.getBytes();
 						DatagramPacket dgpUnicastInvite = new DatagramPacket(buf, buf.length, commonMulticastGroup,
 								MulticastGroupPort);
 						commonMulticastSocket.send(dgpUnicastInvite);
 					} catch (Exception e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-		        }
-		    }
+				}
+			}
 		});
-		//Let's create a JScrollPane container and place the JList over it
+		// Let's create a JScrollPane container and place the JList over it
 		friendList_ScrollPane = new JScrollPane(friendList);
 
-		//Setting the List scrollpane's x,y coordinates, width and height
+		// Setting the List scrollpane's x,y coordinates, width and height
 		friendList_ScrollPane.setBounds(26, 148, 90, 185);
 
-		//Enabling vertical scrolling
+		// Enabling vertical scrolling
 		friendList_ScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
-		/*Instead of adding JList directly to contentPane, we add the JScrollPane
-		  which already had the JList attached to it to the contentPane*/
-		//contentPane.add(friendList);
+		/*
+		 * Instead of adding JList directly to contentPane, we add the
+		 * JScrollPane which already had the JList attached to it to the
+		 * contentPane
+		 */
+		// contentPane.add(friendList);
 		contentPane.add(friendList_ScrollPane);
 
 		// *********************************************************************
@@ -738,39 +779,85 @@ public class Group12ChatApp extends JFrame {
 		groupList = new JList<String>(groupVector);
 		groupList.setBounds(0, 0, 90, 184);
 		groupList.addMouseListener(new MouseAdapter() {
-		    public void mouseClicked(MouseEvent evt) {
-		        JList list = (JList)evt.getSource();
-		        if (evt.getClickCount() == 2) {
-		            // Double-click detected
-		            int index = list.locationToIndex(evt.getPoint());
-		            lblGroup.setText("Group:");
-		            lblChatGroupName.setText(groupVector.get(index));
-		            btnChatJoin.setEnabled(true);
-		        }
-		    }
+			public void mouseClicked(MouseEvent evt) {
+				JList list = (JList) evt.getSource();
+				if (evt.getClickCount() == 2) {
+					// Double-click detected
+					int index = list.locationToIndex(evt.getPoint());
+					lblGroup.setText("Group:");
+					lblChatGroupName.setText(groupVector.get(index));
+					try {
+						String groupName = lblChatGroupName.getText();
+						groupMulticastSocket = new MulticastSocket(MulticastGroupPort);
+						groupMulticastGroup = InetAddress.getByName(groupMap.get(groupName));
+						groupMulticastSocket.joinGroup(groupMulticastGroup);
+						taChatBox.setText("");
+
+						// Send a joined message
+						String message = txtUserName.getText() + " joined";
+						byte[] buf = message.getBytes();
+						DatagramPacket dgpChatJoin = new DatagramPacket(buf, buf.length, groupMulticastGroup,
+								MulticastGroupPort);
+						groupMulticastSocket.send(dgpChatJoin);
+
+						// Create a new thread to keep listening for packets from
+						// the group
+						new Thread(new Runnable() {
+							@Override
+							public void run() {
+								byte buf1[] = new byte[1000];
+								DatagramPacket dgpMessageReceived = new DatagramPacket(buf1, buf1.length);
+								while (true) {
+									try {
+										groupMulticastSocket.receive(dgpMessageReceived);
+										byte[] receivedData = dgpMessageReceived.getData();
+										int length = dgpMessageReceived.getLength();
+										// Assured we received string
+										String msg = new String(receivedData, 0, length);
+										taChatBox.append(msg + "\n");
+									} catch (IOException ex) {
+										ex.printStackTrace();
+									}
+								}
+							}
+						}).start();
+
+						// Toggle button
+						btnChatJoin.setEnabled(false);
+						btnChatLeave.setEnabled(true);
+						btnMessageSend.setEnabled(true);
+					} catch (Exception e1) {
+						e1.printStackTrace();
+					}
+				}
+			}
 		});
-		
-		//Let's create a JScrollPane container and place the JList over it
+
+		// Let's create a JScrollPane container and place the JList over it
 		groupList_ScrollPane = new JScrollPane(groupList);
 
-		//Setting the List scrollpane's x,y coordinates, width and height
+		// Setting the List scrollpane's x,y coordinates, width and height
 		groupList_ScrollPane.setBounds(127, 149, 90, 184);
 
-		//Enabling vertical scrolling
+		// Enabling vertical scrolling
 		groupList_ScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
-		/*Instead of adding JList directly to contentPane, we add the JScrollPane
-		  which already had the JList attached to it to the contentPane*/
-		//contentPane.add(groupList);
+		/*
+		 * Instead of adding JList directly to contentPane, we add the
+		 * JScrollPane which already had the JList attached to it to the
+		 * contentPane
+		 */
+		// contentPane.add(groupList);
 		contentPane.add(groupList_ScrollPane);
 
 		// *********************************************************************
 
-		// ***********************GROUP JOIN/LEAVE**************************************
+		// ***********************GROUP
+		// JOIN/LEAVE**************************************
 		lblGroup = new JLabel("");
 		lblGroup.setBounds(225, 124, 52, 14);
 		contentPane.add(lblGroup);
-		
+
 		lblChatGroupName = new JLabel("");
 		lblChatGroupName.setBounds(263, 124, 89, 14);
 		contentPane.add(lblChatGroupName);
@@ -778,47 +865,48 @@ public class Group12ChatApp extends JFrame {
 		btnChatJoin = new JButton("Join");
 		btnChatJoin.setEnabled(false);
 		btnChatJoin.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {				
+			public void actionPerformed(ActionEvent e) {
 				try {
 					String groupName = lblChatGroupName.getText();
 					groupMulticastSocket = new MulticastSocket(MulticastGroupPort);
 					groupMulticastGroup = InetAddress.getByName(groupMap.get(groupName));
 					groupMulticastSocket.joinGroup(groupMulticastGroup);
 					taChatBox.setText("");
-					
-					//Send a joined message
+
+					// Send a joined message
 					String message = txtUserName.getText() + " joined";
 					byte[] buf = message.getBytes();
-					DatagramPacket dgpChatJoin = new DatagramPacket(buf, buf.length, groupMulticastGroup, MulticastGroupPort);
+					DatagramPacket dgpChatJoin = new DatagramPacket(buf, buf.length, groupMulticastGroup,
+							MulticastGroupPort);
 					groupMulticastSocket.send(dgpChatJoin);
-					
-					//Create a new thread to keep listening for packets from the group
+
+					// Create a new thread to keep listening for packets from
+					// the group
 					new Thread(new Runnable() {
 						@Override
 						public void run() {
 							byte buf1[] = new byte[1000];
-							DatagramPacket dgpMessageReceived= new DatagramPacket(buf1, buf1.length);
-							while(true){
-								try{
+							DatagramPacket dgpMessageReceived = new DatagramPacket(buf1, buf1.length);
+							while (true) {
+								try {
 									groupMulticastSocket.receive(dgpMessageReceived);
 									byte[] receivedData = dgpMessageReceived.getData();
 									int length = dgpMessageReceived.getLength();
-									//Assured we received string
-									String msg = new String(receivedData,0, length);
+									// Assured we received string
+									String msg = new String(receivedData, 0, length);
 									taChatBox.append(msg + "\n");
-								}catch(IOException ex){
+								} catch (IOException ex) {
 									ex.printStackTrace();
 								}
 							}
 						}
 					}).start();
-					
-					//Toggle button
+
+					// Toggle button
 					btnChatJoin.setEnabled(false);
 					btnChatLeave.setEnabled(true);
 					btnMessageSend.setEnabled(true);
 				} catch (Exception e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}
@@ -830,19 +918,20 @@ public class Group12ChatApp extends JFrame {
 		btnChatLeave.setEnabled(false);
 		btnChatLeave.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				try{
+				try {
 					String message = txtUserName.getText() + " : is leaving";
 					byte[] buf = message.getBytes();
-					DatagramPacket dgpChatLeave= new DatagramPacket(buf, buf.length, groupMulticastGroup, MulticastGroupPort);
+					DatagramPacket dgpChatLeave = new DatagramPacket(buf, buf.length, groupMulticastGroup,
+							MulticastGroupPort);
 					groupMulticastSocket.send(dgpChatLeave);
 					groupMulticastSocket.leaveGroup(groupMulticastGroup);
-					
-					//Toggle button
+
+					// Toggle button
 					btnChatJoin.setEnabled(true);
 					btnMessageSend.setEnabled(false);
 					btnChatLeave.setEnabled(false);
-					
-				}catch(IOException ex){
+
+				} catch (IOException ex) {
 					ex.printStackTrace();
 				}
 			}
@@ -867,7 +956,8 @@ public class Group12ChatApp extends JFrame {
 				try {
 					String message = txtUserName.getText() + ": " + txtMessage.getText().trim();
 					byte[] buf = message.getBytes();
-					DatagramPacket dgpMessageSend = new DatagramPacket(buf, buf.length, groupMulticastGroup, MulticastGroupPort);
+					DatagramPacket dgpMessageSend = new DatagramPacket(buf, buf.length, groupMulticastGroup,
+							MulticastGroupPort);
 					groupMulticastSocket.send(dgpMessageSend);
 				} catch (IOException ex) {
 					ex.printStackTrace();
@@ -877,7 +967,7 @@ public class Group12ChatApp extends JFrame {
 		btnMessageSend.setEnabled(false);
 		btnMessageSend.setBounds(422, 344, 89, 23);
 		contentPane.add(btnMessageSend);
-		
+
 		// *********************************************************************
 
 	}
@@ -889,4 +979,5 @@ public class Group12ChatApp extends JFrame {
 		int num4 = generator.nextInt(256);
 		return ("235.1." + num3 + "." + num4);
 	}
+
 }
