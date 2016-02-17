@@ -58,6 +58,13 @@ public class Group12ChatApp extends JFrame {
 	JButton btnChatJoin;
 	JButton btnChatLeave;
 	JButton btnMessageSend;
+	
+	//JScrollPane (A container with scrollbars that places a UI component within it)
+	//for our JTextArea and JList
+	JScrollPane textArea_ScrollPane;
+	JScrollPane groupList_ScrollPane;
+	JScrollPane friendList_ScrollPane;
+	
 
 	/**
 	 * Launch the application.
@@ -102,8 +109,22 @@ public class Group12ChatApp extends JFrame {
 		contentPane.add(lblStatus);
 
 		taChatBox = new JTextArea();
-		taChatBox.setBounds(228, 149, 285, 185);
-		contentPane.add(taChatBox);
+		taChatBox.setBounds(0, 0, 285, 185);
+		
+		//Let's create a JScrollPane container and place the JTextArea over it
+		textArea_ScrollPane = new JScrollPane(taChatBox);
+		
+		//Setting the textArea scrollpane's x,y coordinates, width and height
+		textArea_ScrollPane.setBounds(228, 149, 285, 185);
+		
+		//Enabling both horizontal and vertical scrolling
+		textArea_ScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+		textArea_ScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		
+		/*Instead of adding JTextArea directly to contentPane, we add the JScrollPane
+		//which already had the JTextArea attached to it to the contentPane
+		//contentPane.add(taChatBox);*/
+		contentPane.add(textArea_ScrollPane);
 
 		// *********************************************************************
 		// Default listening channel
@@ -570,7 +591,7 @@ public class Group12ChatApp extends JFrame {
 		friendVector = new Vector<String>();
 		// Create a JList that is capable of storing String type items
 		friendList = new JList<String>(friendVector);
-		friendList.setBounds(26, 148, 90, 185);
+		friendList.setBounds(0, 0, 90, 185);
 		friendList.addMouseListener(new MouseAdapter() {
 		    public void mouseClicked(MouseEvent evt) {
 		        JList list = (JList)evt.getSource();
@@ -598,7 +619,19 @@ public class Group12ChatApp extends JFrame {
 		        }
 		    }
 		});
-		contentPane.add(friendList);
+		//Let's create a JScrollPane container and place the JList over it
+		friendList_ScrollPane = new JScrollPane(friendList);
+
+		//Setting the List scrollpane's x,y coordinates, width and height
+		friendList_ScrollPane.setBounds(26, 148, 90, 185);
+
+		//Enabling vertical scrolling
+		friendList_ScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+
+		/*Instead of adding JList directly to contentPane, we add the JScrollPane
+		  which already had the JList attached to it to the contentPane*/
+		//contentPane.add(friendList);
+		contentPane.add(friendList_ScrollPane);
 
 		// *********************************************************************
 
@@ -703,7 +736,7 @@ public class Group12ChatApp extends JFrame {
 
 		groupVector = new Vector<String>();
 		groupList = new JList<String>(groupVector);
-		groupList.setBounds(127, 149, 90, 184);
+		groupList.setBounds(0, 0, 90, 184);
 		groupList.addMouseListener(new MouseAdapter() {
 		    public void mouseClicked(MouseEvent evt) {
 		        JList list = (JList)evt.getSource();
@@ -716,7 +749,20 @@ public class Group12ChatApp extends JFrame {
 		        }
 		    }
 		});
-		contentPane.add(groupList);
+		
+		//Let's create a JScrollPane container and place the JList over it
+		groupList_ScrollPane = new JScrollPane(groupList);
+
+		//Setting the List scrollpane's x,y coordinates, width and height
+		groupList_ScrollPane.setBounds(127, 149, 90, 184);
+
+		//Enabling vertical scrolling
+		groupList_ScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+
+		/*Instead of adding JList directly to contentPane, we add the JScrollPane
+		  which already had the JList attached to it to the contentPane*/
+		//contentPane.add(groupList);
+		contentPane.add(groupList_ScrollPane);
 
 		// *********************************************************************
 
