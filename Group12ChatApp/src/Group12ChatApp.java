@@ -22,12 +22,19 @@ import javax.swing.JScrollPane;
 import javax.swing.JList;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.Color;
 
 public class Group12ChatApp extends JFrame {
 	// Using
 	public static final int MulticastGroupPort = 6789;
 	public static final String commonMulticastGroupIP = "235.1.1.1";
 	private String userStatus = "Offline";
+	
+	private String prevUserName = "";
+	Vector<String> emptyFriendVector;
+	Vector<String> emptyGroupVector;
+	
+	JLabel iconStatus;
 
 	InetAddress commonMulticastGroup = null;
 	MulticastSocket commonMulticastSocket = null;
@@ -93,7 +100,7 @@ public class Group12ChatApp extends JFrame {
 
 		setTitle("Group 12 Group Chat Application");
 		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-		setBounds(100, 100, 551, 417);
+		setBounds(100, 100, 566, 417);
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {				
 				try {
@@ -103,14 +110,23 @@ public class Group12ChatApp extends JFrame {
 					DatagramPacket dgpUserStatus = new DatagramPacket(buf, buf.length, commonMulticastGroup,
 							MulticastGroupPort);
 					commonMulticastSocket.send(dgpUserStatus);
+					
+					if (JOptionPane.showConfirmDialog(new JFrame(), "Are you sure to leave the application?", "", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION){
+						System.exit(0);
+				    }else{
+				    	// Notify all user have online back
+						String message2 = "UserStatus:All:" + txtUserName.getText().trim() + ":Online";
+						byte[] buf2 = message2.getBytes();
+						DatagramPacket dgpUserStatus2 = new DatagramPacket(buf2, buf2.length, commonMulticastGroup,
+								MulticastGroupPort);
+						commonMulticastSocket.send(dgpUserStatus2);
+				    }
 				} catch (IOException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 
-				if (JOptionPane.showConfirmDialog(new JFrame(), "Are you sure to leave the application?", "", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION){
-					System.exit(0);
-			    }
+				
 			}
 		});
 		setVisible(true);
@@ -126,8 +142,13 @@ public class Group12ChatApp extends JFrame {
 		lblTempID.setBounds(362, 22, 109, 14);
 		contentPane.add(lblTempID);
 
+		iconStatus = new JLabel();
+		iconStatus.setIcon(new ImageIcon("img/offline.png"));
+		iconStatus.setBounds(457, 11, 32, 32);
+		contentPane.add(iconStatus);
+		
 		lblStatus = new JLabel("Offline");
-		lblStatus.setBounds(467, 22, 46, 14);
+		lblStatus.setBounds(495, 22, 46, 14);
 		contentPane.add(lblStatus);
 
 		taChatBox = new JTextArea();
@@ -208,6 +229,7 @@ public class Group12ChatApp extends JFrame {
 								commonMulticastSocket.send(dgpUserStatus);
 
 								userStatus = "Offline";
+								
 								txtUserName.setEnabled(true);
 								btnRegisterUser.setText("Online");
 								JOptionPane.showMessageDialog(new JFrame(), data, "Error", JOptionPane.ERROR_MESSAGE);
@@ -270,6 +292,26 @@ public class Group12ChatApp extends JFrame {
 								}
 							}
 						}
+						// Friend delete
+						// command = Friend Delete ; user = deleted friend my sender list ; data
+						// = sender user name ; extra = null
+						else if(command.equals("FriendDelete")){
+							if(txtUserName.getText().trim().equals(user)){
+								friendVector.remove(data);
+								friendList.setListData(friendVector);
+								if(friendHistoryList.contains(data)){
+									friendHistoryList.remove(data);
+								}
+							}
+							// All except user
+							else if(user.equals("All") && !txtUserName.getText().trim().equals(data)){
+								//to tell all sender not using this username anymore
+								if(friendHistoryList.contains(data)){
+									friendHistoryList.remove(data);
+								}
+							}
+						}
+						
 						// User Status update
 						// command = User status ; user = all ; data
 						// = sender user name ; extra = online/offline
@@ -283,6 +325,11 @@ public class Group12ChatApp extends JFrame {
 									// remove from vector for display in JList
 									friendVector.remove(data);
 									friendList.setListData(friendVector);
+									
+									//remove the IP they hold
+									if (groupMap.containsKey(data)){
+										groupMap.remove(data);
+									}
 								}
 							}
 						}
@@ -428,7 +475,7 @@ public class Group12ChatApp extends JFrame {
 									// Rejected unicast
 									else {
 										message = "UnicastInviteReply:" + data + ":\"" + user
-												+ "\" had rejected the private messaging.:Rejected";
+												+ "\" had rejected the private messaging.:Reject";
 									}
 									byte[] buf = message.getBytes();
 									DatagramPacket dgpUnicastInviteReply = new DatagramPacket(buf, buf.length,
@@ -528,45 +575,75 @@ public class Group12ChatApp extends JFrame {
 		btnRegisterUser = new JButton("Online");
 		btnRegisterUser.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				try {
-					// Toggle status and button display
-					if (btnRegisterUser.getText().equals("Online")) {
-						// Notify all user have online
-						String message = "UserStatus:All:" + txtUserName.getText().trim() + ":Online";
+				//Validation
+				if(txtUserName.getText().trim().equals("")){
+					JOptionPane.showMessageDialog(new JFrame(), "Username cannot be blank", "Error", JOptionPane.ERROR_MESSAGE);
+				}else{
+					try {
+						// Toggle status and button display
+						if (btnRegisterUser.getText().equals("Online")) {
+							// Notify all user have online
+							String message = "UserStatus:All:" + txtUserName.getText().trim() + ":Online";
+							byte[] buf = message.getBytes();
+							DatagramPacket dgpUserStatus = new DatagramPacket(buf, buf.length, commonMulticastGroup,
+									MulticastGroupPort);
+							commonMulticastSocket.send(dgpUserStatus);
+	
+							userStatus = "Online";
+							txtUserName.setEnabled(false);
+							btnRegisterUser.setText("Offline");
+							if(txtUserName.getText().trim().equals(prevUserName)){
+								friendList.setListData(friendVector);
+								groupList.setListData(groupVector);
+							}else{
+								// New list
+								friendVector = new Vector<String>();
+								groupVector = new Vector<String>();
+								friendList.setListData(friendVector);
+								groupList.setListData(groupVector);
+	
+								// Remove my username from other active process
+								String message2 = "FriendDelete:All:" + prevUserName
+								+ ": ";
+								byte[] buf2 = message2.getBytes();
+								DatagramPacket dgpFriendDelete = new DatagramPacket(buf2, buf2.length, commonMulticastGroup,
+										MulticastGroupPort);
+								commonMulticastSocket.send(dgpFriendDelete);
+							}
+							
+						} else {
+							// Notify all user have offline
+							String message = "UserStatus:All:" + txtUserName.getText().trim() + ":Offline";
+							byte[] buf = message.getBytes();
+							DatagramPacket dgpUserStatus = new DatagramPacket(buf, buf.length, commonMulticastGroup,
+									MulticastGroupPort);
+							commonMulticastSocket.send(dgpUserStatus);
+	
+							userStatus = "Offline";
+							prevUserName = txtUserName.getText().trim();						
+							txtUserName.setEnabled(true);
+							btnRegisterUser.setText("Online");
+							//Clear friend and group list
+							friendList.setListData(new Vector<String>());
+							groupList.setListData(new Vector<String>());
+						}
+	
+						// Broadcast Username check
+						String message = "UserCheck:All:" + txtUserName.getText() + ":" + lblTempID.getText();
 						byte[] buf = message.getBytes();
-						DatagramPacket dgpUserStatus = new DatagramPacket(buf, buf.length, commonMulticastGroup,
+						DatagramPacket dgpUserNameCheck = new DatagramPacket(buf, buf.length, commonMulticastGroup,
 								MulticastGroupPort);
-						commonMulticastSocket.send(dgpUserStatus);
-
-						userStatus = "Online";
-						txtUserName.setEnabled(false);
-						btnRegisterUser.setText("Offline");
-					} else {
-						// Notify all user have offline
-						String message = "UserStatus:All:" + txtUserName.getText().trim() + ":Offline";
-						byte[] buf = message.getBytes();
-						DatagramPacket dgpUserStatus = new DatagramPacket(buf, buf.length, commonMulticastGroup,
-								MulticastGroupPort);
-						commonMulticastSocket.send(dgpUserStatus);
-
-						userStatus = "Offline";
-						txtUserName.setEnabled(true);
-						btnRegisterUser.setText("Online");
+						commonMulticastSocket.send(dgpUserNameCheck);
+	
+						Thread.sleep(100);
+	
+						lblStatus.setText(userStatus); // Own reference
+						String imgLink = "img/"+userStatus+".png";
+						iconStatus.setIcon(new ImageIcon(imgLink));
+	
+					} catch (Exception e1) {
+						e1.printStackTrace();
 					}
-
-					// Broadcast Username check
-					String message = "UserCheck:All:" + txtUserName.getText() + ":" + lblTempID.getText();
-					byte[] buf = message.getBytes();
-					DatagramPacket dgpUserNameCheck = new DatagramPacket(buf, buf.length, commonMulticastGroup,
-							MulticastGroupPort);
-					commonMulticastSocket.send(dgpUserNameCheck);
-
-					Thread.sleep(100);
-
-					lblStatus.setText(userStatus); // Own reference
-
-				} catch (Exception e1) {
-					e1.printStackTrace();
 				}
 			}
 		});
@@ -587,16 +664,25 @@ public class Group12ChatApp extends JFrame {
 		JButton btnFriendAdd = new JButton("Add");
 		btnFriendAdd.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				// Friend Request
-				try {
-					String message = "FriendRequest:" + txtFriendName.getText().trim() + ":" + txtUserName.getText()
-							+ ": ";
-					byte[] buf = message.getBytes();
-					DatagramPacket dgpFriendRequest = new DatagramPacket(buf, buf.length, commonMulticastGroup,
-							MulticastGroupPort);
-					commonMulticastSocket.send(dgpFriendRequest);
-				} catch (Exception e1) {
-					e1.printStackTrace();
+				//Validation
+				if(txtFriendName.getText().trim().equals("")){
+					JOptionPane.showMessageDialog(new JFrame(), "Friend name cannot be blank", "Error", JOptionPane.ERROR_MESSAGE);
+				}else{
+					// Friend Request
+					try {
+						if(txtFriendName.getText().trim().equals(txtUserName.getText().trim())){
+							JOptionPane.showMessageDialog(new JFrame(), "Adding yourself as friend is invalid.", "Error", JOptionPane.ERROR_MESSAGE);
+						}else{
+							String message = "FriendRequest:" + txtFriendName.getText().trim() + ":" + txtUserName.getText()
+									+ ": ";
+							byte[] buf = message.getBytes();
+							DatagramPacket dgpFriendRequest = new DatagramPacket(buf, buf.length, commonMulticastGroup,
+									MulticastGroupPort);
+							commonMulticastSocket.send(dgpFriendRequest);
+						}
+					} catch (Exception e1) {
+						e1.printStackTrace();
+					}
 				}
 			}
 		});
@@ -607,13 +693,26 @@ public class Group12ChatApp extends JFrame {
 		btnFriendDelete.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				// Remove from friend History
-				if (friendHistoryList.contains(friendList.getSelectedValue())) {
-					if (JOptionPane.showConfirmDialog(new JFrame(), "Are you sure to remove \""+friendList.getSelectedValue()+"\" from friend list?", "Friend Delete", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION){
-						friendHistoryList.remove(friendList.getSelectedValue());
-						// remove from JList
-						friendVector.remove(friendList.getSelectedValue());
-						friendList.setListData(friendVector);
-				    }					
+				try{
+					if (friendHistoryList.contains(friendList.getSelectedValue())) {
+						if (JOptionPane.showConfirmDialog(new JFrame(), "Are you sure to remove \""+friendList.getSelectedValue()+"\" from friend list?", "Friend Delete", JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION){
+							String removeFriend = friendList.getSelectedValue();
+							friendHistoryList.remove(removeFriend);
+							// remove from JList
+							friendVector.remove(removeFriend);
+							friendList.setListData(friendVector);
+							
+							// Remove my username from deleted friend
+							String message = "FriendDelete:" + removeFriend + ":" + txtUserName.getText()
+							+ ": ";
+							byte[] buf = message.getBytes();
+							DatagramPacket dgpFriendDelete = new DatagramPacket(buf, buf.length, commonMulticastGroup,
+									MulticastGroupPort);
+							commonMulticastSocket.send(dgpFriendDelete);
+					    }					
+					}
+				} catch (Exception e1) {
+					e1.printStackTrace();
 				}
 
 				
@@ -689,73 +788,77 @@ public class Group12ChatApp extends JFrame {
 		JButton btnGroupAdd = new JButton("Add");
 		btnGroupAdd.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				try {
-					// check for name conflict
-					// check for IP conflict
-
-					// Validation
-					if (groupMap.containsKey(txtGroupName.getText().trim())) {
-						String data = "\"" + txtGroupName.getText().trim() + "\"had already been taken";
-						JOptionPane.showMessageDialog(new JFrame(), data, "Error", JOptionPane.ERROR_MESSAGE);
-					} else {
-						// Broadcast Group name check
-						String requestIP = randomGenerateIP();
-						String message = "GroupCheck:" + txtUserName.getText().trim() + ":"
-								+ txtGroupName.getText().trim() + ":" + requestIP;
-						byte[] buf = message.getBytes();
-						DatagramPacket dgpGroupCheck = new DatagramPacket(buf, buf.length, commonMulticastGroup,
-								MulticastGroupPort);
-						commonMulticastSocket.send(dgpGroupCheck);
-
-						// Add to own group list
-						groupMap.put(txtGroupName.getText().trim(), requestIP);
-						groupVector.add(txtGroupName.getText().trim());
-						groupList.setListData(groupVector);
-
-						// Thread.sleep(1000);
-						// JOptionPane.showMessageDialog(new JFrame(), "Add
-						// friends
-						// yo", "Add group participants",
-						// JOptionPane.INFORMATION_MESSAGE);
-
-						// friendHistoryList.add("Test1");
-						// friendHistoryList.add("Test2");
-						// friendHistoryList.add("Test3");
-						// friendHistoryList.add("Test4");
-						// friendHistoryList.add("Test5");
-						//
-						// JPanel al = new JPanel();
-						// for (String mc : friendHistoryList){
-						// JCheckBox box = new JCheckBox(mc);
-						// al.add(box);
-						// }
-						// int requestResult =
-						// JOptionPane.showConfirmDialog(null,
-						// al, "Add Friend ",JOptionPane.YES_NO_OPTION);
-						// if (requestResult == JOptionPane.YES_OPTION){
-						//
-						// }
-
-						// ***** NEED CHANGE UI*********
-
-						JPanel myPanel = new JPanel();
-						myPanel.add(new JLabel("Add group participants"));
-						myPanel.add(friendField);
-						int result = JOptionPane.showConfirmDialog(null, myPanel, "Add group participants",
-								JOptionPane.OK_CANCEL_OPTION);
-						if (result == JOptionPane.OK_OPTION) {
-							// Assume data will be "friend1,friend2,friend3"
-							String inviteMessage = "GroupInvite:" + friendField.getText() + ":"
+				//Validation
+				if(txtGroupName.getText().trim().equals("")){
+					JOptionPane.showMessageDialog(new JFrame(), "Group name cannot be blank", "Error", JOptionPane.ERROR_MESSAGE);
+				}else{
+					try {
+						// check for name conflict
+						// check for IP conflict
+	
+						// Validation
+						if (groupMap.containsKey(txtGroupName.getText().trim())) {
+							String data = "\"" + txtGroupName.getText().trim() + "\"had already been taken";
+							JOptionPane.showMessageDialog(new JFrame(), data, "Error", JOptionPane.ERROR_MESSAGE);
+						} else {
+							// Broadcast Group name check
+							String requestIP = randomGenerateIP();
+							String message = "GroupCheck:" + txtUserName.getText().trim() + ":"
 									+ txtGroupName.getText().trim() + ":" + requestIP;
-							byte[] buf2 = inviteMessage.getBytes();
-							DatagramPacket dgpGroupInvite = new DatagramPacket(buf2, buf2.length, commonMulticastGroup,
+							byte[] buf = message.getBytes();
+							DatagramPacket dgpGroupCheck = new DatagramPacket(buf, buf.length, commonMulticastGroup,
 									MulticastGroupPort);
-							commonMulticastSocket.send(dgpGroupInvite);
-						}
-					}
+							commonMulticastSocket.send(dgpGroupCheck);
+	
+							// Add to own group list
+							groupMap.put(txtGroupName.getText().trim(), requestIP);
+							groupVector.add(txtGroupName.getText().trim());
+							groupList.setListData(groupVector);
+	
+							JList list = new JList(friendVector);
+							//Modify JList to accept multiple selection
+							list.setSelectionModel(new DefaultListSelectionModel() {
+							    @Override
+							    public void setSelectionInterval(int index0, int index1) {
+							        if(super.isSelectedIndex(index0)) {
+							            super.removeSelectionInterval(index0, index1);
+							        }
+							        else {
+							            super.addSelectionInterval(index0, index1);
+							        }
+							    }
+							});
+					        JScrollPane jscrollpane=new JScrollPane();
+					        jscrollpane.setViewportView(list);
 
-				} catch (Exception ex) {
-					ex.printStackTrace();
+					        if(JOptionPane.showConfirmDialog(null, jscrollpane, "Add group participants", JOptionPane.YES_NO_OPTION)== JOptionPane.YES_OPTION){
+					        	List<String> selectValue = list.getSelectedValuesList();
+					        	String selectFriend = "";
+					        	for (String value : selectValue) {
+					        		selectFriend = selectFriend + value + ",";
+					        	}
+					        	// remove the last comma
+					        	selectFriend = selectFriend.substring(0, selectFriend.length() - 1);
+					        	System.out.println(selectFriend);
+					        	
+					        	// Assume data will be "friend1,friend2,friend3"
+								String inviteMessage = "GroupInvite:" + selectFriend + ":"
+										+ txtGroupName.getText().trim() + ":" + requestIP;
+								byte[] buf2 = inviteMessage.getBytes();
+								DatagramPacket dgpGroupInvite = new DatagramPacket(buf2, buf2.length, commonMulticastGroup,
+										MulticastGroupPort);
+								commonMulticastSocket.send(dgpGroupInvite);
+					        }else{
+					        	// remove to own group list
+								groupMap.remove(txtGroupName.getText().trim());
+								groupVector.remove(txtGroupName.getText().trim());
+								groupList.setListData(groupVector);
+					        }
+						}
+	
+					} catch (Exception ex) {
+						ex.printStackTrace();
+					}
 				}
 			}
 		});
@@ -919,7 +1022,7 @@ public class Group12ChatApp extends JFrame {
 		btnChatLeave.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				try {
-					String message = txtUserName.getText() + " : is leaving";
+					String message = txtUserName.getText() + " left";
 					byte[] buf = message.getBytes();
 					DatagramPacket dgpChatLeave = new DatagramPacket(buf, buf.length, groupMulticastGroup,
 							MulticastGroupPort);
@@ -966,7 +1069,8 @@ public class Group12ChatApp extends JFrame {
 		});
 		btnMessageSend.setEnabled(false);
 		btnMessageSend.setBounds(422, 344, 89, 23);
-		contentPane.add(btnMessageSend);
+		contentPane.add(btnMessageSend);	
+		
 
 		// *********************************************************************
 
@@ -979,5 +1083,4 @@ public class Group12ChatApp extends JFrame {
 		int num4 = generator.nextInt(256);
 		return ("235.1." + num3 + "." + num4);
 	}
-
 }
