@@ -1,4 +1,5 @@
 import java.awt.BorderLayout;
+
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Window;
@@ -10,6 +11,10 @@ import java.net.UnknownHostException;
 import java.util.*;
 
 import javax.swing.*;
+import javax.swing.border.Border;// added
+import java.awt.BorderLayout; // added
+import javax.swing.border.LineBorder; // added
+
 import javax.swing.border.EmptyBorder;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
@@ -23,12 +28,18 @@ import javax.swing.JList;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.Color;
+import java.awt.SystemColor;
+import java.awt.Font;
+
+
 
 public class Group12ChatApp extends JFrame {
 	// Using
 	public static final int MulticastGroupPort = 6789;
 	public static final String commonMulticastGroupIP = "235.1.1.1";
 	private String userStatus = "Offline";
+	
+	
 	
 	private String prevUserName = "";
 	Vector<String> emptyFriendVector;
@@ -67,7 +78,9 @@ public class Group12ChatApp extends JFrame {
 	JButton btnChatJoin;
 	JButton btnChatLeave;
 	JButton btnMessageSend;
-
+	
+	
+	
 	// JScrollPane (A container with scrollbars that places a UI component
 	// within it)
 	// for our JTextArea and JList
@@ -97,10 +110,14 @@ public class Group12ChatApp extends JFrame {
 	public Group12ChatApp() {
 		friendHistoryList = new ArrayList<String>();
 		groupMap = new HashMap<String, String>();
-
+		
+		
+		
 		setTitle("Group 12 Group Chat Application");
 		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-		setBounds(100, 100, 566, 417);
+		setBounds(100, 100, 678, 444);
+		Border thickBorder = new LineBorder(Color.BLACK, 1); // added
+		
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {				
 				try {
@@ -132,6 +149,7 @@ public class Group12ChatApp extends JFrame {
 		setVisible(true);
 
 		JPanel contentPane = new JPanel();
+		contentPane.setBackground(new Color(153, 204, 255));
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
@@ -139,26 +157,29 @@ public class Group12ChatApp extends JFrame {
 		lblTempID = new JLabel("ID");
 		lblTempID.setText(ManagementFactory.getRuntimeMXBean().getName());
 		lblTempID.setVisible(false);
-		lblTempID.setBounds(362, 22, 109, 14);
+		lblTempID.setBounds(522, 31, 109, 14);
 		contentPane.add(lblTempID);
 
 		iconStatus = new JLabel();
 		iconStatus.setIcon(new ImageIcon("img/offline.png"));
-		iconStatus.setBounds(457, 11, 32, 32);
+		iconStatus.setBounds(67, 42, 32, 32);
 		contentPane.add(iconStatus);
 		
 		lblStatus = new JLabel("Offline");
-		lblStatus.setBounds(495, 22, 46, 14);
+		lblStatus.setBounds(28, 59, 46, 14);
 		contentPane.add(lblStatus);
 
 		taChatBox = new JTextArea();
+		taChatBox.setBackground(new Color(255, 255, 255));
 		taChatBox.setBounds(0, 0, 285, 185);
 
 		// Let's create a JScrollPane container and place the JTextArea over it
 		textArea_ScrollPane = new JScrollPane(taChatBox);
-
+		textArea_ScrollPane.getViewport().setBackground(Color.pink);// added
+		
+		
 		// Setting the textArea scrollpane's x,y coordinates, width and height
-		textArea_ScrollPane.setBounds(228, 149, 285, 185);
+		textArea_ScrollPane.setBounds(30, 80, 370, 240);
 
 		// Enabling both horizontal and vertical scrolling
 		textArea_ScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
@@ -563,16 +584,20 @@ public class Group12ChatApp extends JFrame {
 
 		// *********************REGISTER USER ROW*******************************
 		JLabel lblUserName = new JLabel("User Name :");
-		lblUserName.setBounds(26, 22, 74, 14);
+		lblUserName.setBounds(415, 35, 74, 14);
 		contentPane.add(lblUserName);
 
 		txtUserName = new JTextField();
+		txtUserName.setBackground(new Color(255, 255, 255));
 		txtUserName.setText("");
-		txtUserName.setBounds(111, 19, 141, 20);
+		txtUserName.setBounds(415, 54, 100, 22);
 		contentPane.add(txtUserName);
 		txtUserName.setColumns(10);
 
 		btnRegisterUser = new JButton("Online");
+		btnRegisterUser.setBackground(new Color(255, 255, 255));
+		btnRegisterUser.setBorder(thickBorder);
+		btnRegisterUser.setBorder(thickBorder);
 		btnRegisterUser.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				//Validation
@@ -647,21 +672,25 @@ public class Group12ChatApp extends JFrame {
 				}
 			}
 		});
-		btnRegisterUser.setBounds(263, 18, 89, 23);
+		btnRegisterUser.setBounds(522, 52, 50, 25);
 		contentPane.add(btnRegisterUser);
 		// *********************************************************************
 
 		// ********************FRIEND LIST***********************************
 		JLabel lblFriendName = new JLabel("Friend Name :");
-		lblFriendName.setBounds(26, 53, 89, 14);
+		lblFriendName.setBounds(415, 78, 89, 14);
 		contentPane.add(lblFriendName);
 
 		txtFriendName = new JTextField();
-		txtFriendName.setBounds(111, 50, 141, 20);
+		txtFriendName.setBackground(new Color(255, 255, 255));
+		txtFriendName.setBounds(415, 94, 100, 22);
 		contentPane.add(txtFriendName);
 		txtFriendName.setColumns(10);
 
 		JButton btnFriendAdd = new JButton("Add");
+		btnFriendAdd.setBackground(new Color(255, 255, 255));
+		btnFriendAdd.setBorder(thickBorder);
+		btnFriendAdd.setBorder(thickBorder);
 		btnFriendAdd.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				//Validation
@@ -686,10 +715,14 @@ public class Group12ChatApp extends JFrame {
 				}
 			}
 		});
-		btnFriendAdd.setBounds(263, 49, 89, 23);
+		btnFriendAdd.setBounds(522, 90, 50, 25);
 		contentPane.add(btnFriendAdd);
 
 		JButton btnFriendDelete = new JButton("Delete");
+		btnFriendDelete.setBackground(new Color(255, 255, 255));
+	
+		btnFriendDelete.setBorder(thickBorder);
+		
 		btnFriendDelete.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				// Remove from friend History
@@ -718,17 +751,18 @@ public class Group12ChatApp extends JFrame {
 				
 			}
 		});
-		btnFriendDelete.setBounds(362, 49, 89, 23);
+		btnFriendDelete.setBounds(579, 91, 50, 25);
 		contentPane.add(btnFriendDelete);
 
 		JLabel lblFriendList = new JLabel("Friend List");
-		lblFriendList.setBounds(26, 125, 63, 14);
+		lblFriendList.setBounds(415, 162, 63, 14);
 		contentPane.add(lblFriendList);
 
 		// Create a vector that can store String objects
 		friendVector = new Vector<String>();
 		// Create a JList that is capable of storing String type items
 		friendList = new JList<String>(friendVector);
+		friendList.setBackground(new Color(255, 255, 255));
 		friendList.setBounds(0, 0, 90, 185);
 		friendList.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent evt) {
@@ -760,7 +794,7 @@ public class Group12ChatApp extends JFrame {
 		friendList_ScrollPane = new JScrollPane(friendList);
 
 		// Setting the List scrollpane's x,y coordinates, width and height
-		friendList_ScrollPane.setBounds(26, 148, 90, 185);
+		friendList_ScrollPane.setBounds(415, 182, 211, 67);
 
 		// Enabling vertical scrolling
 		friendList_ScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
@@ -777,15 +811,18 @@ public class Group12ChatApp extends JFrame {
 
 		// ********************GROUP LIST***********************************
 		JLabel lblGroupName = new JLabel("Group Name :");
-		lblGroupName.setBounds(26, 82, 89, 14);
+		lblGroupName.setBounds(415, 120, 89, 14);
 		contentPane.add(lblGroupName);
 
 		txtGroupName = new JTextField();
-		txtGroupName.setBounds(111, 79, 141, 20);
+		txtGroupName.setBackground(new Color(255, 255, 255));
+		txtGroupName.setBounds(415, 136, 100, 22);
 		contentPane.add(txtGroupName);
 		txtGroupName.setColumns(10);
 
 		JButton btnGroupAdd = new JButton("Add");
+		btnGroupAdd.setBackground(new Color(255, 255, 255));
+		btnGroupAdd.setBorder(thickBorder);
 		btnGroupAdd.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				//Validation
@@ -862,24 +899,27 @@ public class Group12ChatApp extends JFrame {
 				}
 			}
 		});
-		btnGroupAdd.setBounds(263, 78, 89, 23);
+		btnGroupAdd.setBounds(522, 132, 50, 25);
 		contentPane.add(btnGroupAdd);
 
 		JButton btnGroupEdit = new JButton("Edit");
+		btnGroupEdit.setBackground(new Color(255, 255, 255));
+		btnGroupEdit.setBorder(thickBorder);
 		btnGroupEdit.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
 			}
 		});
-		btnGroupEdit.setBounds(362, 78, 89, 23);
+		btnGroupEdit.setBounds(579, 131, 50, 25);
 		contentPane.add(btnGroupEdit);
 
 		JLabel lblGroupList = new JLabel("Group List");
-		lblGroupList.setBounds(127, 125, 63, 14);
+		lblGroupList.setBounds(415, 260, 63, 14);
 		contentPane.add(lblGroupList);
 
 		groupVector = new Vector<String>();
 		groupList = new JList<String>(groupVector);
+		groupList.setBackground(new Color(255, 255, 255));
 		groupList.setBounds(0, 0, 90, 184);
 		groupList.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent evt) {
@@ -940,7 +980,7 @@ public class Group12ChatApp extends JFrame {
 		groupList_ScrollPane = new JScrollPane(groupList);
 
 		// Setting the List scrollpane's x,y coordinates, width and height
-		groupList_ScrollPane.setBounds(127, 149, 90, 184);
+		groupList_ScrollPane.setBounds(415, 283, 211, 75);
 
 		// Enabling vertical scrolling
 		groupList_ScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
@@ -958,14 +998,16 @@ public class Group12ChatApp extends JFrame {
 		// ***********************GROUP
 		// JOIN/LEAVE**************************************
 		lblGroup = new JLabel("");
-		lblGroup.setBounds(225, 124, 52, 14);
+		lblGroup.setBounds(99, 58, 58, 14);
 		contentPane.add(lblGroup);
 
 		lblChatGroupName = new JLabel("");
-		lblChatGroupName.setBounds(263, 124, 89, 14);
+		lblChatGroupName.setBounds(147, 58, 83, 14);
 		contentPane.add(lblChatGroupName);
 
 		btnChatJoin = new JButton("Join");
+		btnChatJoin.setBackground(new Color(255, 255, 255));
+		//btnChatJoin.setBorder(thickBorder);
 		btnChatJoin.setEnabled(false);
 		btnChatJoin.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -1014,10 +1056,12 @@ public class Group12ChatApp extends JFrame {
 				}
 			}
 		});
-		btnChatJoin.setBounds(356, 121, 70, 23);
+		btnChatJoin.setBounds(245, 53, 75, 25);
 		contentPane.add(btnChatJoin);
 
 		btnChatLeave = new JButton("Leave");
+		btnChatLeave.setBackground(new Color(255, 255, 255));
+		//btnChatLeave.setBorder(thickBorder);
 		btnChatLeave.setEnabled(false);
 		btnChatLeave.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
@@ -1039,21 +1083,25 @@ public class Group12ChatApp extends JFrame {
 				}
 			}
 		});
-		btnChatLeave.setBounds(436, 122, 70, 23);
+		btnChatLeave.setBounds(325, 53, 75, 25);
 		contentPane.add(btnChatLeave);
 		// *********************************************************************
 
 		// ************************SENDING*********************************
-		JLabel lblMessage = new JLabel("Message");
-		lblMessage.setBounds(23, 348, 52, 14);
+		JLabel lblMessage = new JLabel("Message :");
+		lblMessage.setFont(new Font("Tahoma", Font.PLAIN, 16));
+		lblMessage.setBounds(32, 327, 89, 17);
 		contentPane.add(lblMessage);
 
 		txtMessage = new JTextField();
-		txtMessage.setBounds(85, 345, 327, 20);
+		txtMessage.setFont(new Font("Tahoma", Font.PLAIN, 17));
+		txtMessage.setBounds(122, 322, 198, 25);
 		contentPane.add(txtMessage);
 		txtMessage.setColumns(10);
 
 		btnMessageSend = new JButton("Send");
+		btnMessageSend.setBackground(new Color(255, 255, 255));
+		//btnMessageSend.setBorder(thickBorder);
 		btnMessageSend.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				try {
@@ -1068,8 +1116,15 @@ public class Group12ChatApp extends JFrame {
 			}
 		});
 		btnMessageSend.setEnabled(false);
-		btnMessageSend.setBounds(422, 344, 89, 23);
+		btnMessageSend.setBounds(325, 322, 75, 25);
 		contentPane.add(btnMessageSend);	
+		
+		JPanel panel = new JPanel();
+		Border thickBorder2 = new LineBorder(Color.BLACK, 1);
+		panel.setBorder(thickBorder2);
+		panel.setBackground(SystemColor.textHighlightText);
+		panel.setBounds(15, 31, 395, 327);
+		contentPane.add(panel);
 		
 
 		// *********************************************************************
